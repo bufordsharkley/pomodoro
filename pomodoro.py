@@ -1,8 +1,9 @@
+#! /usr/bin/env python
+
 import random
 import Tkinter as tk
 import time
 
-# starting with: http://stackoverflow.com/a/31086299
 def main(args):
   if len(args) > 1:
     if args[1] == 'start':
@@ -42,6 +43,7 @@ def do_not_work(time_left):
     time_left -= 1
 
 
+# starting with: http://stackoverflow.com/a/31086299
 def graphics():
   root = tk.Tk()
   root.attributes('-alpha', 0.0) # For icon
