@@ -54,24 +54,12 @@ def pomodoro_lock():
   finally:
     os.remove(lock_path)
 
-# starting with: http://stackoverflow.com/a/31086299
-def graphics():
-  # TODO - implement with tomato graphics
-  root = tk.Tk()
-  root.attributes('-alpha', 0.0) # For icon
-  #root.lower()
-  root.iconify()
-  window = tk.Toplevel(root)
-  window.geometry("100x100") #Whatever size
-  window.overrideredirect(1) #Remove border
-  #window.attributes('-topmost', 1)
-  #Whatever buttons, etc
-  close = tk.Button(window, text="Close Window",
-                    bg='blue', fg='white',
-                    command = lambda: root.destroy())
-  close.pack(fill = tk.BOTH, expand = 1)
-  window.mainloop()
+
+def run_pomodoro_forever():
+  pom = base.Pomodoro()
+  pom.run_forever()
+
 
 if __name__ == "__main__":
-  main(sys.argv)
-  #graphics()
+  #with pomodoro_lock():
+  run_pomodoro_forever()
