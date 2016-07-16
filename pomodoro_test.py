@@ -66,23 +66,39 @@ class PomodoroObjectTests(unittest.TestCase):
     pom = base.Pomodoro()
     self.assertEqual(pom.state.state, base.states.sleep)
 
+  def testDefaultStateIsSleep(self):
+    pom = base.Pomodoro()
+    self.assertEqual(pom.state.state, base.states.sleep)
 
 class PomodoroTests(unittest.TestCase):
 
   def testCalculateWorkMinutesRightAway(self):
     seconds = 30 * 60
-    work_minutes = base.calculate_work_minutes(seconds)
-    self.assertEqual(work_minutes, 23)
+    self.assertEqual(base.calculate_work_seconds(seconds, min_s=23 * 60,
+                                                 max_s=28 * 60),
+                     23 * 60)
+    self.assertEqual(base.calculate_work_seconds(seconds, min_s=25 * 60,
+                                                 max_s=28 * 60),
+                     25 * 60)
 
-  def testCalculateWorkMinutesAtTwoMinutesIn(self):
+  def testCalculateWorkMinutesAtMax(self):
     seconds = 28 * 60
-    work_minutes = base.calculate_work_minutes(seconds)
-    self.assertEqual(work_minutes, 28)
+    self.assertEqual(base.calculate_work_seconds(seconds, min_s=23 * 60,
+                                                 max_s=28 * 60),
+                     28 * 60)
+    seconds = 26 * 60
+    # TODO finish the robustness here--
+    """
+    self.assertEqual(base.calculate_work_seconds(seconds, min_s=23 * 60,
+                                                 max_s=26 * 60),
+                     26 * 60)
+
 
   def testCalculateWorkMinutesAtOneMinuteIn(self):
     seconds = 29 * 60
-    work_minutes = base.calculate_work_minutes(seconds)
+    work_minutes = base.calculate_work_seconds(seconds, min=23, max=28)
     self.assertEqual(work_minutes, 25.5)
+    """
 
 if __name__ == "__main__":
   unittest.main()

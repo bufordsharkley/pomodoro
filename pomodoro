@@ -6,72 +6,35 @@ import datetime
 import os
 import time
 import sys
-import random
 
 import base
 
 
-def main(args):
-  todos = []
-  with pomodoro_lock():
-    if len(args) > 1:
-      if args[1] == 'start':
-        start()
-      if args[1] == 'end':
-        end(todos)
-    while True:
-      try:
-        now = datetime.datetime.now()
-        if now.minute % 30 < 3:  # in case it runs late for some reason
-          try:
-            todo = demand_wind_up(timeout=2*60)
-            if todo is None:
-              continue
-            now = datetime.datetime.now()
-            minutes_to_work = calculate_work_minutes(now)
-            todos.append(todo)
-            do_work(minutes_to_work * 60)
-            do_not_work((30 - minutes_to_work) * 60)
-          except TimeoutException:
-            pass
-        else:
-          if not now.second:
-            print('waiting')
-          time.sleep(1)
-      except KeyboardInterrupt:
-        end(todos)
-
-
 @contextlib.contextmanager
 def pomodoro_lock():
-  lock_path = '/tmp/pomodoro'
-  if os.path.exists(lock_path):
-    raise RuntimeError('Currently locked')
-  with open(lock_path, 'w') as f:
-    f.write(str(os.getpid()))
-  try:
-    yield
-  finally:
-    os.remove(lock_path)
+    lock_path = '/tmp/pomodoro'
+    if os.path.exists(lock_path):
+        raise RuntimeError('Currently locked')
+    with open(lock_path, 'w') as f:
+        f.write(str(os.getpid()))
+    try:
+        yield
+    finally:
+        os.remove(lock_path)
 
-# starting with: http://stackoverflow.com/a/31086299
-def graphics():
-  # TODO - implement with tomato graphics
-  root = tk.Tk()
-  root.attributes('-alpha', 0.0) # For icon
-  #root.lower()
-  root.iconify()
-  window = tk.Toplevel(root)
-  window.geometry("100x100") #Whatever size
-  window.overrideredirect(1) #Remove border
-  #window.attributes('-topmost', 1)
-  #Whatever buttons, etc
-  close = tk.Button(window, text="Close Window",
-                    bg='blue', fg='white',
-                    command = lambda: root.destroy())
-  close.pack(fill = tk.BOTH, expand = 1)
-  window.mainloop()
+
+def run_pomodoro_forever():
+    pomodoro = base.Pomodoro()
+
 
 if __name__ == "__main__":
-  main(sys.argv)
-  #graphics()
+    with pomodoro_lock():
+        run_pomodoro_forever()
+        print(pomodoro)
+        print(pomodoro.state)
+    # TODO start/end
+    # TODO alignment flag
+    #parser = argparse.ArgumentParser(description='Fire up a pomodoro')
+    #parser.add_argument(
+    #main(sys.argv)
+    #main()

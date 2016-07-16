@@ -2,9 +2,9 @@ import collections
 import datetime
 import enum
 import os
-import time
-import sys
 import random
+import sys
+import time
 
 
 states = enum.Enum('State', 'sleep live')
@@ -32,9 +32,14 @@ def wind_up(seconds: int=0, minutes: int=0) -> PomodoroState:
 
 class Pomodoro:
 
-  def __init__(self, alignment=0):
-    self.alignment = alignment
-    self.state = PomodoroState(state=states.sleep, seconds=0)
+    def __init__(self, alignment=0):
+        self.alignment = alignment
+        self.state = PomodoroState(state=states.sleep, seconds=0)
+
+    def run_forever(self):
+        while True:
+            #self.state = #advance_state(self.state)
+            time.sleep(1)
 
 
 class Ring(Exception):
@@ -54,9 +59,9 @@ def demand_wind_up(timeout):
     print("You said nothing!")
 
 
-def calculate_work_minutes(seconds: int) -> int:
+def calculate_work_seconds(seconds: int, min_s: int, max_s: int) -> int:
   delay = 30 * 60 - seconds
-  return (23 * 60 + delay * 2.5) / 60.
+  return min_s + delay * 2.5
 
 
 def main(args):
