@@ -67,10 +67,10 @@ class Pomodoro:
   def run_forever(self):
     while True:
       try:
-        self.state = advance_state(self.state, 1)
         self.state = blocking_input_if_needed(self.state,
                                               self.log,
                                               self.alignment)
+        self.state = advance_state(self.state, 1)
         # Update visuals:
         # TODO actual visuals
         print(self.state)
@@ -94,8 +94,10 @@ class Pomodoro:
             seconds=seconds_til_next_alignment(now, self.alignment))
       except KeyboardInterrupt:
         # Go into close:
+        # TODO proper display
         print
-        print(self.log)
+        for dt, entry in self.log:
+          print('    {}\n    {}'.format(dt.strftime('%H:%M'), entry))
         print
         self.final = True
         self.state = PomodoroState(state=STATES.live, seconds=12.5 * 60)
