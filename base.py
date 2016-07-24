@@ -1,8 +1,10 @@
 import collections
 import datetime
 import enum
+import multiprocessing
 import os
 import select
+import subprocess
 import time
 import sys
 import random
@@ -35,6 +37,24 @@ def align(minutes: int, alignment: int) -> int:
 PomodoroState = collections.namedtuple('PomodoroState', ['state', 'seconds'])
 
 
+def create_ring():
+    d = multiprocessing.Process(target=play_ring_audio)
+    d.daemon = True
+    d.start()
+    import random
+    ring_count = 200
+    for _ in range(ring_count):
+        spaces = ' ' * random.randint(0, 20)
+        print(spaces + 'ring')
+        time.sleep(.5 / float(ring_count))
+
+
+def play_ring_audio():
+    devnull = open(os.devnull, 'w')
+    subprocess.call("mplayer audio/ring.m4a", shell=True,
+                    stdout=devnull, stderr=devnull)
+
+
 def advance_state(state: PomodoroState, seconds: int) -> PomodoroState:
   current_state = state.state
   if current_state == STATES.sleep:
@@ -42,6 +62,7 @@ def advance_state(state: PomodoroState, seconds: int) -> PomodoroState:
   seconds = state.seconds - seconds
   if seconds <= 0:
     if current_state == STATES.live:
+      create_ring()
       raise Ring
     elif current_state == STATES.notwork:
       raise Ennui
@@ -56,6 +77,12 @@ def wind_up(seconds: int=0, minutes: int=0) -> PomodoroState:
   return PomodoroState(state=STATES.live, seconds=seconds + minutes * 60)
 
 
+def update_visuals(state):
+    current_state = state.state
+    if current_state == STATES.live:
+        print('tick')
+
+
 class Pomodoro:
 
   def __init__(self, alignment=0):
@@ -65,6 +92,7 @@ class Pomodoro:
     self.final = False
 
   def run_forever(self):
+    create_ring()
     while True:
       try:
         self.state = blocking_input_if_needed(self.state,
@@ -73,7 +101,7 @@ class Pomodoro:
         self.state = advance_state(self.state, 1)
         # Update visuals:
         # TODO actual visuals
-        print(self.state)
+        update_visuals(self.state)
         time.sleep(1)
       except Ring:
         if self.final:
