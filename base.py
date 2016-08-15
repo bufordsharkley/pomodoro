@@ -51,7 +51,7 @@ def create_ring():
 
 def play_ring_audio():
     devnull = open(os.devnull, 'w')
-    subprocess.call("mplayer audio/ring.m4a", shell=True,
+    subprocess.call("mplayer audio/ring.m4a -volume 100", shell=True,
                     stdout=devnull, stderr=devnull)
 
 
