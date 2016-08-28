@@ -10,6 +10,7 @@ import time
 import sys
 import random
 
+import visuals
 
 class Ring(Exception):
   """A pomodoro has ended."""
@@ -38,22 +39,23 @@ def align(minutes: int, alignment: int) -> int:
 PomodoroState = collections.namedtuple('PomodoroState', ['state', 'seconds'])
 
 
-def create_ring():
+def create_ring(screen):
     d = multiprocessing.Process(target=play_ring_audio)
     d.daemon = True
     d.start()
-    import random
-    ring_count = 200
-    for _ in range(ring_count):
-        spaces = ' ' * random.randint(0, 20)
-        print(spaces + 'ring')
-        time.sleep(.5 / float(ring_count))
+    visuals.ring(screen)
 
 
 def play_ring_audio():
     devnull = open(os.devnull, 'w')
     subprocess.call("mplayer audio/ring.m4a", shell=True,
                     stdout=devnull, stderr=devnull)
+
+
+def update_visuals(screen, state):
+    current_state = state.state
+    if current_state == STATES.live:
+        visuals.draw_tick(screen)
 
 
 def advance_state(state: PomodoroState, seconds: int) -> PomodoroState:
@@ -63,7 +65,6 @@ def advance_state(state: PomodoroState, seconds: int) -> PomodoroState:
   seconds = state.seconds - seconds
   if seconds <= 0:
     if current_state == STATES.live:
-      create_ring()
       raise Ring
     elif current_state == STATES.notwork:
       raise Ennui
@@ -78,11 +79,6 @@ def wind_up(seconds: int=0, minutes: int=0) -> PomodoroState:
   return PomodoroState(state=STATES.live, seconds=seconds + minutes * 60)
 
 
-def update_visuals(state):
-    current_state = state.state
-    if current_state == STATES.live:
-        print('tick')
-
 
 class Pomodoro:
 
@@ -93,8 +89,8 @@ class Pomodoro:
     self.final = False
 
   def run_forever(self):
-    create_ring()
-    self.screen = initialize_graphics()
+    self.screen = visuals.initialize_graphics()
+    create_ring(self.screen)
     while True:
       try:
         self.state = blocking_input_if_needed(self.state,
@@ -102,11 +98,10 @@ class Pomodoro:
                                               self.log,
                                               self.alignment)
         self.state = advance_state(self.state, 1)
-        # Update visuals:
-        # TODO actual visuals
-        update_visuals(self.state)
+        update_visuals(self.screen, self.state)
         time.sleep(1)
       except Ring:
+        create_ring(self.screen)
         if self.final:
           self.final = False
           self.state = PomodoroState(state=STATES.sleep, seconds=0)
@@ -125,11 +120,10 @@ class Pomodoro:
             seconds=seconds_til_next_alignment(now, self.alignment))
       except KeyboardInterrupt:
         # Go into close:
-        # TODO proper display
-        print
-        for dt, entry in self.log:
-          print('    {}\n    {}'.format(dt.strftime('%H:%M'), entry))
-        print
+        log = '\n'.join('    {}\n    {}'.format(dt.strftime('%H:%M'), entry)
+                        for dt, entry in self.log)
+        with open('/tmp/pomodoro_log.txt', 'w') as f:
+            f.write(log)
         self.final = True
         self.state = PomodoroState(state=STATES.live, seconds=12.5 * 60)
 
@@ -150,13 +144,11 @@ def blocking_input_if_needed(state: PomodoroState,
 
 
 def block_in_sleep(screen, log):
-  while log:
-    log.pop()
-  screen.addstr(2, 3, 'Enter something to wake up')
-  screen.getch()
-  screen.clear()
-  screen.refresh()
-  return wind_up(minutes=12, seconds=30)
+    while log:
+        log.pop()
+    visuals.write_text('Enter something to wake up')
+    visuals.wait_for_response(screen)
+    return wind_up(minutes=12, seconds=30)
 
 
 def block_in_nagging(screen,
@@ -183,26 +175,3 @@ def calculate_work_seconds(total_seconds: int) -> int:
 def calculate_work_minutes(seconds: int) -> float:
   delay = 30 * 60 - seconds
   return (23 * 60 + delay * 2.5) / 60.
-
-
-def my_raw_input(stdscr, r, c, prompt_string):
-    curses.echo()
-    stdscr.addstr(r, c, prompt_string)
-    stdscr.refresh()
-    resp = stdscr.getstr(r + 1, c, 200)
-    curses.noecho()
-    return resp
-
-
-def initialize_graphics():
-    screen = curses.initscr()
-    screen.clear()
-    return screen
-
-
-def huthuthut():
-    stdscr.addstr(5, 3," Invalid input")
-    stdscr.refresh()
-    stdscr.getch()
-    # Clear:
-    curses.endwin()
