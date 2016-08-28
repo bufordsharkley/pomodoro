@@ -1,4 +1,5 @@
 import collections
+import curses
 import datetime
 import enum
 import multiprocessing
@@ -93,9 +94,11 @@ class Pomodoro:
 
   def run_forever(self):
     create_ring()
+    self.screen = initialize_graphics()
     while True:
       try:
         self.state = blocking_input_if_needed(self.state,
+                                              self.screen,
                                               self.log,
                                               self.alignment)
         self.state = advance_state(self.state, 1)
@@ -136,25 +139,30 @@ def seconds_til_next_alignment(time_: datetime.datetime, alignment: int) -> int:
 
 
 def blocking_input_if_needed(state: PomodoroState,
+                             screen,
                              log: list,
                              alignment: int) -> PomodoroState:
   if state.state == STATES.sleep:
-    return block_in_sleep(log)
+    return block_in_sleep(screen, log)
   elif state.state == STATES.nagging:
-    return block_in_nagging(state.seconds, log, alignment)
+    return block_in_nagging(screen, state.seconds, log, alignment)
   return state
 
 
-def block_in_sleep(log):
+def block_in_sleep(screen, log):
   while log:
     log.pop()
-  answer = input('Enter something to wake up')
+  screen.addstr(2, 3, 'Enter something to wake up')
+  screen.getch()
+  screen.clear()
+  screen.refresh()
   return wind_up(minutes=12, seconds=30)
 
 
-def block_in_nagging(timeout: int, log: list, alignment: int) -> PomodoroState:
-  print(("What's this pomodoro for? "
-         "You have {} seconds to answer!").format(timeout))
+def block_in_nagging(screen,
+                     timeout: int, log: list, alignment: int) -> PomodoroState:
+  screen.addstr(2, 3, ("What's this pomodoro for? "
+                       "You have {} seconds to answer!").format(timeout))
 
   answer, _, _ = select.select([sys.stdin], [], [], timeout)
 
@@ -175,3 +183,26 @@ def calculate_work_seconds(total_seconds: int) -> int:
 def calculate_work_minutes(seconds: int) -> float:
   delay = 30 * 60 - seconds
   return (23 * 60 + delay * 2.5) / 60.
+
+
+def my_raw_input(stdscr, r, c, prompt_string):
+    curses.echo()
+    stdscr.addstr(r, c, prompt_string)
+    stdscr.refresh()
+    resp = stdscr.getstr(r + 1, c, 200)
+    curses.noecho()
+    return resp
+
+
+def initialize_graphics():
+    screen = curses.initscr()
+    screen.clear()
+    return screen
+
+
+def huthuthut():
+    stdscr.addstr(5, 3," Invalid input")
+    stdscr.refresh()
+    stdscr.getch()
+    # Clear:
+    curses.endwin()
