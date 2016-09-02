@@ -51,8 +51,8 @@ def create_ring():
 
 def play_ring_audio():
     devnull = open(os.devnull, 'w')
-    subprocess.call("mplayer audio/ring.m4a -volume 100", shell=True,
-                    stdout=devnull, stderr=devnull)
+    subprocess.call("mplayer ~/repos/pomodoro/audio/ring.m4a -volume 100",
+                    shell=True, stdout=devnull, stderr=devnull)
 
 
 def advance_state(state: PomodoroState, seconds: int) -> PomodoroState:
