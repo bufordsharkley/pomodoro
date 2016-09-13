@@ -27,8 +27,9 @@ class Hope(Exception):
 
 STATES = enum.Enum('State', 'sleep live notwork nagging gnashing')
 
-NAG_TIME = 120
+NAG_TIME = 240
 
+ticking_process = None
 
 def align(minutes: int, alignment: int) -> int:
   return (minutes - alignment) % 30
@@ -50,9 +51,23 @@ def create_ring():
 
 
 def play_ring_audio():
+    stop_ticking_sound()
     devnull = open(os.devnull, 'w')
     subprocess.call("mplayer ~/repos/pomodoro/audio/ring.m4a -volume 100",
                     shell=True, stdout=devnull, stderr=devnull)
+
+
+def play_ticking_sound():
+  global ticking_process
+  devnull = open(os.devnull, 'w')
+  ticking_process = subprocess.Popen(
+      "mplayer ~/repos/pomodoro/audio/ticking.m4a -loop 0 -volume 100",
+      shell=True, stdout=devnull, stderr=devnull)
+
+
+def stop_ticking_sound():
+  if ticking_process is not None:
+    ticking_process.kill()
 
 
 def advance_state(state: PomodoroState, seconds: int) -> PomodoroState:
@@ -149,7 +164,9 @@ def block_in_sleep(log):
   while log:
     log.pop()
   answer = input('Enter something to wake up')
-  return wind_up(minutes=12, seconds=30)
+  play_ticking_sound()
+  return wind_up(minutes=0, seconds=4)
+  #return wind_up(minutes=12, seconds=30)
 
 
 def block_in_nagging(timeout: int, log: list, alignment: int) -> PomodoroState:
@@ -163,6 +180,7 @@ def block_in_nagging(timeout: int, log: list, alignment: int) -> PomodoroState:
     seconds = seconds_til_next_alignment(now, alignment)
     seconds = calculate_work_seconds(seconds)
     log.append((now, sys.stdin.readline().strip()))
+    play_ticking_sound()
     return PomodoroState(state=STATES.live, seconds=seconds)
   else:
     raise Dispair
